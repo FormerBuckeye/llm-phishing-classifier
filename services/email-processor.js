@@ -140,6 +140,12 @@ class EmailProcessor {
         quarantinedAt = new Date().toISOString();
 
         logger.warn(`🔒 QUARANTINED phishing email: ${emailData.subject} from ${emailData.senderEmail}`);
+      } else {
+        // For benign emails, deliver to inbox and mark unread
+        await this.gmail.moveToInbox(messageId);
+        await this.gmail.markUnread(messageId);
+        actionTaken = 'delivered';
+        logger.info(`✅ Delivered to inbox: ${emailData.subject}`);
       }
 
       // Save classification to database
