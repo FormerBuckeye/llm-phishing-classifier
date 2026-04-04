@@ -2,6 +2,34 @@
 
 A production-ready email classification system that uses DeepSeek LLM to automatically detect and quarantine phishing emails in real-time.
 
+## Current Implementation Status
+
+**⚠️ Hybrid Architecture (V1.5)**
+
+This service currently operates with a **hybrid approach** that combines V1 and V2 features:
+
+- **Processing**: Time-based polling (V1 architecture)
+- **Detection**: DeepSeek LLM AI classification (V2 quality)
+- **Delivery Logic**: Smart decision making with inbox restoration (V2 features)
+- **Speed**: Optimized 10-second polling interval (enhancement)
+
+### Hybrid Flow (Current)
+
+```
+Email Arrives
+    ↓
+Gmail delivers to INBOX (native)
+    ↓
+Service polls every 10 seconds (time-based)
+    ↓
+DeepSeek classifies: phish/spam/benign
+    ↓
+Decision Based on Confidence Score:
+  - High-confidence threat (≥0.7) → Stay in SPAM ✓
+  - Low-confidence threat (<0.7) → INBOX + UNREAD for review ⚠
+  - Benign → INBOX + UNREAD ✓
+```
+
 ## Version History
 
 ### V1 (Initial Release - commit 894926b)
@@ -15,58 +43,44 @@ A production-ready email classification system that uses DeepSeek LLM to automat
 **Limitations:**
 - Time-based processing only (no prioritization)
 - No Gmail label management
-- No queue-based processing
 - Basic classification only
 
-### V2 (Enhanced - commit 438e914)
-**Major Improvements:**
+### V2 (Planned - Enhanced)
+**Goals:**
+- Gmail label-based processing with pending queue
+- Priority routing for different email types
+- Zero inbox exposure for confirmed threats
+- Two-layer security (Gmail filter + AI classification)
 
-**1. GmailService Enhancements:**
-- `getPendingMessages()` - queries Gmail for PENDING_CLASSIFICATION labeled emails
-- Label helpers: `addLabel()`, `removeLabel()`, `markUnread()`, `moveToInbox()`
-
-**2. Smart Processing Flow:**
-- Modified `processRecentEmails()` → uses `getPendingMessages()` instead of time queries
-- Automatic removal of PENDING_CLASSIFICATION label after classifying
-- Enhanced delivery logic:
-  - High-confidence quarantine: stays in spam ✓
-  - Low-confidence threats: inbox + unread (review) ⚠
-  - Benign: inbox + unread ✓
-
-**3. Two-Layer Security Architecture:**
+**Planned Architecture:**
 ```
-Inbound Email → Gmail Filter → Suspicious → SPAM
-                                     → Service polls SPAM → DeepSeek Classification
-                                     → Decision:
-                                       - High confidence phish → stays SPAM
-                                       - Low confidence phish → INBOX + UNREAD
-                                       - Benign → INBOX + UNREAD
+Inbound Email → Gmail Filter → Apply PENDING_CLASSIFICATION label
+                                    ↓
+                    Service polls label queue → DeepSeek Classification
+                                    ↓
+                            Decision:
+                            - High confidence phish → stays SPAM
+                            - Low confidence phish → INBOX + UNREAD
+                            - Benign → INBOX + UNREAD
 ```
 
-**4. Tested & Verified**
-- Phishing email correctly classified as phish (95% confidence)
-- Quarantine logic working as designed
-- Service processes within 60-second intervals
+**Status:** Code foundation in place, pending Gmail filter setup
 
-### V2 vs V1 Key Changes
+## Current Configuration
 
-| Feature | V1 | V2 |
-|---------|----|----|
-| Message Query | Time-based (last N hours) | Label-based (PENDING_CLASSIFICATION) |
-| Label Management | ❌ None | ✅ Full (add/remove/mark/move) |
-| Pending Label | ❌ No concept | ✅ Automatic removal after processing |
-| Delivery Logic | Simple (spam only) | Smart (spam/phish/benign) |
-| Security Layers | 1 (basic) | 2 (native + AI) |
+**Runtime Settings (as configured):**
+- **Processing Mode**: Time-based polling
+- **Poll Interval**: 10 seconds (configurable)
+- **Processing Window**: Last 1 hour
+- **Quarantine Threshold**: ≥0.7 confidence
+- **AI Model**: DeepSeek (via API)
+- **Database**: PostgreSQL
 
-## Architecture
-
-Two-layer email security with Gmail native filter + AI classification:
-
-1. **Gmail Layer** (fast, broad): Native spam filter moves suspicious emails to SPAM immediately
-2. **AI Layer** (sophisticated): Service polls SPAM, classifies with DeepSeek, makes delivery decision:
-   - **Phish/spam (≥0.7)** → keep quarantined in SPAM ✓
-   - **Phish/spam (<0.7)** → move to INBOX + UNREAD for review ⚠
-   - **Benign** → move to INBOX + UNREAD ✓
+Key environment variables:
+- `POLL_INTERVAL_SECONDS=10` - How often to check for new emails
+- `HOURS_TO_PROCESS=1` - Hours back to process
+- `QUARANTINE_ENABLED=true` - Enable automatic quarantine
+- `ENABLE_QUARANTINE=true` - Quarantine threshold 0.7
 
 ## Installation & Setup
 
@@ -79,25 +93,85 @@ Two-layer email security with Gmail native filter + AI classification:
 5. Run setup: `node database/setup.js`
 6. Start service: `npm start`
 
-## Configuration
+## Features
 
-Key environment variables:
-- `POLL_INTERVAL_SECONDS=60` - polling interval in seconds
-- `HOURS_TO_PROCESS=1` - hours back to process (time-based mode, unused in V2)
-- `QUARANTINE_ENABLED=true` - enable automatic quarantine
+### Core Capabilities
+- ✅ AI-powered email classification (phish/spam/benign)
+- ✅ Confidence-based quarantine decisions
+- ✅ Smart delivery logic (spam/phish/benign)
+- ✅ Database persistence and analytics
+- ✅ Automated label management
+- ✅ Structured logging
 
-## Version Tags
+### Enhanced Methods
+- `moveToSpam(messageId)` - Quarantine emails
+- `moveToInbox(messageId)` - Restore to inbox
+- `markUnread(messageId)` - Mark unread for review
 
-- **v1.0** - Initial release (basic classification)
-- **v2.0** - Enhanced pending-label flow with improved delivery logic
+## Testing & Verification
 
-## Security Notes
+### Current Performance
+- Phishing detection: 95% confidence in test scenarios
+- Processing interval: 10-second polling
+- Quarantine logic: Handles all confidence levels correctly
+- Integration: Seamless Gmail API communication
 
-- Gmail native spam filter provides first layer (fast, broad)
-- DeepSeek AI classification provides second layer (sophisticated, AI-powered)
-- Both layers work together to prevent phishing emails from reaching inbox
-- Confirmed threats stay quarantined in spam for manual review
-- Suspicious but uncertain emails deliver to inbox + unread for review
+### Example Classification Results
+```
+Email: "I am good thank you"
+Sender: penghuius@gmail.com
+Classification: benign
+Confidence: 0.9500
+Action: delivered to inbox ✓
+
+Email: "Security alert"  
+Sender: no-reply@accounts.google.com
+Classification: benign
+Confidence: 0.9500
+Action: delivered to inbox ✓
+
+Email: "[TEST-10] Attention:I am Diplomatic agent..."
+Sender: aegisaizph@gmail.com
+Classification: phish
+Confidence: 0.9500
+Action: quarantined to spam ✓
+```
+
+## Security Architecture
+
+### Two-Layer Security (Planned Implementation)
+1. **Gmail Layer** (fast, broad): Native spam filter catches suspicious emails immediately
+2. **AI Layer** (sophisticated): Service polls and classifies with DeepSeek for delivery decisions
+
+Current implementation provides AI-enhanced protection with 10-second processing intervals.
+
+## Database Schema
+
+**email_classifications table:**
+- message_id, email_address, subject
+- sender_name, sender_email, received_at
+- classification, confidence_score
+- action_taken, is_quarantined
+- quarantined_at, created_at, updated_at
+
+**processing_log table:**
+- Tracks all classification attempts
+- Success and error logging
+- Performance monitoring
+
+## Notes
+
+**For True Zero-Exposure (V2):** To implement full pending-label flow:
+
+1. Create Gmail filter:
+   ```
+   Matches: *
+   Do this: Apply label "PENDING_CLASSIFICATION", Mark as read
+   ```
+
+2. Update code to use label-based queries instead of time-based
+
+3. Modify service to poll pending label queue
 
 ## License
 
@@ -105,8 +179,7 @@ MIT
 
 ---
 
-**Version History:**
+**Version Tags:**
 - **v1.0** (commit 894926b) - Basic email classification
-- **v2.0** (commit 438e914) - Enhanced pending-label flow with smart delivery logic
-EOF
-echo "README.md created with V1/V2 documentation"
+- **v2.0** (commit 438e914) - Code foundation for pending-label flow
+- **Current** - Hybrid implementation with 10s optimized polling
