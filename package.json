@@ -1,0 +1,35 @@
+{
+  "name": "email-classification-stack",
+  "version": "1.0.0",
+  "description": "Live email classification system with LLM-based phishing detection",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "once": "node index.js --once",
+    "setup-db": "node database/setup.js",
+    "test:gmail": "node test/gmail-test.js",
+    "test:deepseek": "node test/classification-test.js"
+  },
+  "keywords": [
+    "email",
+    "classification",
+    "phishing",
+    "gmail",
+    "llm"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/local-auth": "^3.0.0",
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5",
+    "googleapis": "^134.0.0",
+    "mailparser": "^3.9.6",
+    "pg": "^8.11.3",
+    "winston": "^3.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

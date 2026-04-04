@@ -1,0 +1,6 @@
+id,message_id,sender_email,subject,classification,confidence_score,quarantined,quarantined_at,received_at,created_at
+5,19d552376da067d1,aegisaizph@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 13:58:19.265-07,2026-04-03 13:58:00-07,2026-04-03 13:58:19.338287-07
+4,19d55144d85a1105,penghuius@gmail.com,🎉 Exclusive Offer: 90% Off All Products!,spam,0.8500,NO,,2026-04-03 13:41:15-07,2026-04-03 13:42:11.936529-07
+3,19d54fcd76c433bc,aegisaizph@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 13:16:49.244-07,2026-04-03 13:15:38-07,2026-04-03 13:16:49.296445-07
+2,19d54fcacf54e183,aegisaizph@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 13:15:44.878-07,2026-04-03 13:15:38-07,2026-04-03 13:15:44.92479-07
+1,19d54e7998bf1b1d,no-reply@accounts.google.com,Security alert,benign,0.9500,NO,,2026-04-03 12:52:34-07,2026-04-03 13:07:38.825125-07

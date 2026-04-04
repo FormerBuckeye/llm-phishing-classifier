@@ -1,0 +1,23 @@
+id,message_id,sender_email,subject,classification,confidence_score,quarantined,quarantined_at,received_at,created_at
+22,19d55a68bcd76456,aegisaizph@gmail.com,[TEST-1] CLIENTE PRIME - BRADESCO LIVELO: Seu cartÃƒÂ£o tem 92.990 pontos LIVELO expirando hoje!,phish,0.9500,YES,2026-04-03 16:24:12.929-07,2026-04-03 16:21:11-07,2026-04-03 16:24:12.948602-07
+21,19d55a5b32ba6ed1,penghuius@gmail.com,Fwd: Exclusive Offer from GoToMeeting,spam,0.8500,YES,2026-04-03 16:22:53.298-07,2026-04-03 16:20:03-07,2026-04-03 16:22:53.300939-07
+20,19d55a69d6f354d1,aegisaizph@gmail.com,[TEST-3] Ã°ÂŸÂ”Â‹ Zonnepanelen voor een goede prijs,spam,0.8500,YES,2026-04-03 16:22:41.924-07,2026-04-03 16:21:15-07,2026-04-03 16:22:41.927309-07
+19,19d55a6a7d20dc29,aegisaizph@gmail.com,[TEST-4] LiberaÃƒÂ§ÃƒÂ£o de IRPF - 6NwlyfzWcsNerv0,phish,0.8500,YES,2026-04-03 16:22:38.58-07,2026-04-03 16:21:18-07,2026-04-03 16:22:38.582507-07
+18,19d55a6c1bfa9524,aegisaizph@gmail.com,[TEST-7] More benefits from Ripple with the Allocation Program,phish,0.8500,YES,2026-04-03 16:22:27.529-07,2026-04-03 16:21:25-07,2026-04-03 16:22:27.531743-07
+17,19d55a6cb75a577f,aegisaizph@gmail.com,[TEST-8] 86RE: Donation For You,phish,0.8500,YES,2026-04-03 16:22:23.761-07,2026-04-03 16:21:27-07,2026-04-03 16:22:23.765935-07
+16,19d55a6d2b88c5d9,aegisaizph@gmail.com,[TEST-9] AÃƒÂ§ÃƒÂ£o Trabalhista !,phish,0.8500,YES,2026-04-03 16:22:17.131-07,2026-04-03 16:21:29-07,2026-04-03 16:22:17.133649-07
+15,19d55a6da8d55247,aegisaizph@gmail.com,"[TEST-10] Attention:I am Diplomatic agent Mr.Wood Forest,",phish,0.9500,YES,2026-04-03 16:22:13.621-07,2026-04-03 16:21:31-07,2026-04-03 16:22:13.649491-07
+14,19d559a7312a7378,penghuius@gmail.com,Exclusive Offer from GoToMeeting,spam,0.8500,YES,2026-04-03 16:10:04.525-07,2026-04-03 16:07:46-07,2026-04-03 16:08:59.836974-07
+13,19d555ecf672db0f,penghuius@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 16:10:33.403-07,2026-04-03 15:02:38-07,2026-04-03 15:59:30.633483-07
+12,19d556c75f0deb0b,penghuius@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 16:10:23.162-07,2026-04-03 15:17:33-07,2026-04-03 15:59:20.153008-07
+11,19d556dd15d29581,penghuius@gmail.com,ACTION NOW! SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 16:10:19.218-07,2026-04-03 15:19:02-07,2026-04-03 15:59:16.909526-07
+10,19d558571f7c32c1,penghuius@gmail.com,🎉 Exclusive Offer: 90% Off All Products!,spam,0.8500,YES,2026-04-03 16:10:12.266-07,2026-04-03 15:44:50-07,2026-04-03 15:59:10.23007-07
+9,19d5587b2a551312,penghuius@gmail.com,🎉 Exclusive Offer: 90% Off All Products!,spam,0.8500,YES,2026-04-03 16:10:08.446-07,2026-04-03 15:47:17-07,2026-04-03 15:59:06.8313-07
+8,19d55708686393a2,penghuius@gmail.com,🎉 Exclusive Offer: 90% Off All Products!,spam,0.8500,YES,2026-04-03 16:11:51.068-07,2026-04-03 15:21:59-07,2026-04-03 15:23:48.144534-07
+7,19d556b47fba2946,aegisaizph@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 16:10:26.656-07,2026-04-03 15:16:16-07,2026-04-03 15:17:38.54599-07
+6,19d556b1dbed5871,aegisaizph@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 16:10:30.062-07,2026-04-03 15:16:16-07,2026-04-03 15:16:28.413375-07
+5,19d552376da067d1,aegisaizph@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 16:10:36.956-07,2026-04-03 13:58:00-07,2026-04-03 13:58:19.338287-07
+4,19d55144d85a1105,penghuius@gmail.com,🎉 Exclusive Offer: 90% Off All Products!,spam,0.8500,YES,2026-04-03 16:11:54.98-07,2026-04-03 13:41:15-07,2026-04-03 13:42:11.936529-07
+3,19d54fcd76c433bc,aegisaizph@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 16:10:43.845-07,2026-04-03 13:15:38-07,2026-04-03 13:16:49.296445-07
+2,19d54fcacf54e183,aegisaizph@gmail.com,SECURITY ALERT: Unauthorized Access Detected,phish,0.9500,YES,2026-04-03 16:10:47.077-07,2026-04-03 13:15:38-07,2026-04-03 13:15:44.92479-07
+1,19d54e7998bf1b1d,no-reply@accounts.google.com,Security alert,benign,0.9500,NO,,2026-04-03 12:52:34-07,2026-04-03 13:07:38.825125-07
