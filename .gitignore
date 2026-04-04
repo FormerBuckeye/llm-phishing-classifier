@@ -4,14 +4,18 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment variables
+# Environment variables - NEVER commit these files!
 .env
 .env.local
 .env.production
+.env.bak
+.env.tmp
+.env.*.local
 
-# Credentials (DO NOT COMMIT!)
+# Credentials (NEVER COMMIT THESE FILES!)
 config/credentials.json
 config/token.json
+config/token.json.bak
 
 # Logs
 logs/
