@@ -9,8 +9,8 @@ A production-ready email classification system that uses DeepSeek LLM to automat
 This service supports **dual-mode operation** with both V1.5 and V2 features:
 
 - **Processing Mode**: Configurable (time-based or label-based)
-- `LABEL_MODE=false` (default): Time-based polling (V1 architecture)
-- `LABEL_MODE=true`: Label-based polling (V2 with zero inbox exposure)
+    - `LABEL_MODE=false` (default): Time-based polling (V1 architecture)
+    - `LABEL_MODE=true`: Label-based polling (V2 with zero inbox exposure)
 - **Detection**: DeepSeek LLM AI classification with Dual-Mode prompts (✅)
 - **Delivery Logic**: Smart decision making with inbox restoration (V2)
 - **Speed**: Optimized 10-second polling interval (✅)

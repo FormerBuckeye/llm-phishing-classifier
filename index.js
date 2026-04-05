@@ -22,6 +22,9 @@ class EmailClassificationApp {
       this.processor = new EmailProcessor();
       await this.processor.init();
 
+      // Add this line here ⬇️
+      logger.addDatabaseTransport(this.processor.db);
+
       this.isRunning = true;
       this.setupShutdownHandlers();
 
@@ -99,6 +102,9 @@ class EmailClassificationApp {
 
       this.processor = new EmailProcessor();
       await this.processor.init();
+
+      // Add this line here ⬇️
+      logger.addDatabaseTransport(this.processor.db);
 
       const result = await this.processor.processRecentEmails(
         parseInt(process.env.HOURS_TO_PROCESS || 1)
