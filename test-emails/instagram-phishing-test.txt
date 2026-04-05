@@ -1,0 +1,20 @@
+Subject:⚠️URGENT: Your Instagram Account Will Be Disabled in 24 Hours
+From: Instagram Security <security-noreply@facebookmail.com>
+To: your.email@gmail.com
+
+Dear Instagram User,
+
+We have detected suspicious activity on your Instagram account.
+Your account has been flagged for unusual login attempts from an unrecognized device.
+
+⚠️ SECURITY ALERT:
+If you do not verify your account within 24 hours,
+your account will be permanently disabled.
+
+To prevent this, verify now:
+https://instagram-secure-verify.net/login?token=urgent_34k5j2l&account=yourhandle
+
+Best regards,
+Instagram Security Team
+
+---
