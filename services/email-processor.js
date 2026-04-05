@@ -103,24 +103,39 @@ class EmailProcessor {
     ];
   }
 
-  async processRecentEmails(hours = 1) {
+  async processLabelQueue(labelName = 'PENDING_CLASSIFICATION', maxResults = 100) {
     let processedCount = 0;
     let quarantinedCount = 0;
 
     try {
-      logger.info(`Processing emails from the last ${hours} hour(s)`);
+      logger.info(`Processing label queue: ${labelName}`);
 
-      // Fetch recent messages
-      const messages = await this.gmail.getRecentMessages(hours);
-
-      if (!messages || messages.length === 0) {
-        logger.info('No new messages to process');
+      // Get label ID
+      const labelId = await this.gmail.getLabelId(labelName);
+      if (!labelId) {
+        logger.warn(`Label '${labelName}' not found`);
         return { processed: 0, quarantined: 0 };
       }
+
+      // Fetch messages with this label
+      const messages = await this.gmail.getMessagesByLabel(labelId, maxResults);
+
+      if (!messages || messages.length === 0) {
+        logger.info('No messages in label queue');
+        return { processed: 0, quarantined: 0 };
+      }
+
+      logger.info(`Found ${messages.length} messages in ${labelName} queue`);
 
       // Process each message
       for (const message of messages) {
         try {
+          // Check if already processed (important for label-based polling)
+          if (this.processingHistory.has(message.id)) {
+            logger.debug(`Skipping already processed message: ${message.id}`);
+            continue;
+          }
+
           const result = await this.processMessage(message.id);
 
           if (result.processed) {
@@ -129,6 +144,14 @@ class EmailProcessor {
             if (result.quarantined) {
               quarantinedCount++;
             }
+
+    // Remove PENDING_CLASSIFICATION label after successful processing
+    try {
+      await this.gmail.removeLabel(message.id, labelId);
+      logger.debug(`Removed ${labelName} label from message ${message.id}`);
+    } catch (labelError) {
+      logger.warn(`Failed to remove pending label from ${message.id}:`, labelError.message);
+    }
           }
         } catch (error) {
           logger.error(`Failed to process message ${message.id}:`, error);
@@ -142,8 +165,52 @@ class EmailProcessor {
       logger.info(`Processing completed: ${processedCount} processed, ${quarantinedCount} quarantined`);
 
     } catch (error) {
-      logger.error('Error in processRecentEmails:', error);
-      await this.db.saveProcessingLog('recent_email_processing', 'error', null, { hours }, error.message);
+      logger.error('Error in processLabelQueue:', error);
+      await this.db.saveProcessingLog('label_queue_processing', 'error', null, { labelName }, error.message);
+    }
+
+    return { processed: processedCount, quarantined: quarantinedCount };
+  }
+
+  async processRecentEmails(hours = 1) {
+    // Backward compatibility: fall back to time-based if label not configured
+    logger.info(`Processing emails from the last ${hours} hour(s) (legacy mode)`);
+    return this.processLegacyTimeBased(hours);
+  }
+
+  async processLegacyTimeBased(hours) {
+    let processedCount = 0;
+    let quarantinedCount = 0;
+
+    try {
+      const messages = await this.gmail.getRecentMessages(hours);
+
+      if (!messages || messages.length === 0) {
+        logger.info('No new messages to process');
+        return { processed: 0, quarantined: 0 };
+      }
+
+      for (const message of messages) {
+        try {
+          if (this.processingHistory.has(message.id)) {
+            continue;
+          }
+          const result = await this.processMessage(message.id);
+          if (result.processed) {
+            processedCount++;
+            if (result.quarantined) {
+              quarantinedCount++;
+            }
+          }
+        } catch (error) {
+          logger.error(`Failed to process message ${message.id}:`, error);
+        }
+        await this.sleep(100);
+      }
+
+      logger.info(`Processing completed: ${processedCount} processed, ${quarantinedCount} quarantined`);
+    } catch (error) {
+      logger.error('Error in processLegacyTimeBased:', error);
     }
 
     return { processed: processedCount, quarantined: quarantinedCount };
@@ -360,20 +427,30 @@ class EmailProcessor {
   async startPolling(options = {}) {
     const {
       intervalSeconds = 60, // Poll every 60 seconds
-      hoursToProcess = 1, // Process emails from last 1 hour
+      labelMode = false, // false = time-based (legacy), true = label-based (V2)
+      labelName = 'PENDING_CLASSIFICATION',
+      hoursToProcess = 1, // Only used in time-based mode
       maxRuns = null, // null = run indefinitely
     } = options;
 
-    let runCount = 0;
+    const mode = labelMode ? 'label' : 'time';
+    logger.info(`🔄 Starting continuous polling (interval: ${intervalSeconds}s, mode: ${mode})`);
 
-    logger.info(`🔄 Starting continuous polling (interval: ${intervalSeconds}s)`);
+    let runCount = 0;
 
     while (maxRuns === null || runCount < maxRuns) {
       try {
         runCount++;
         logger.info(`📊 Polling run #${runCount}`);
 
-        const result = await this.processRecentEmails(hoursToProcess);
+        let result;
+        if (labelMode) {
+          // Label-based polling (V2)
+          result = await this.processLabelQueue(labelName);
+        } else {
+          // Time-based polling (legacy/v1.5)
+          result = await this.processRecentEmails(hoursToProcess);
+        }
 
         logger.info(`📈 Run ${runCount} stats: ${result.processed} processed, ${result.quarantined} quarantined`);
 
@@ -389,7 +466,7 @@ class EmailProcessor {
 
       } catch (error) {
         logger.error(`Polling run #${runCount} failed:`, error);
-        await this.db.saveProcessingLog('polling', 'error', null, { runCount }, error.message);
+        await this.db.saveProcessingLog('polling', 'error', null, { runCount, labelMode }, error.message);
 
         // Wait before retrying
         await this.sleep(Math.max(intervalSeconds, 30) * 1000);

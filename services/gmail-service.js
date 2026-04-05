@@ -6,7 +6,8 @@ const logger = require('../utils/logger');
 
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.labels'
+  'https://www.googleapis.com/auth/gmail.labels',
+  'https://www.googleapis.com/auth/gmail.settings.basic'
 ];
 
 const TOKEN_PATH = path.join(__dirname, '../config/token.json');
@@ -301,6 +302,42 @@ class GmailService {
     }
   }
 
+  async createGmailFilter(criteria, actions) {
+    try {
+      const filter = await this.gmail.users.settings.filters.create({
+        userId: 'me',
+        requestBody: {
+          criteria,
+          action: actions,
+        },
+      });
+
+      logger.info('Created Gmail filter:', filter.data.id);
+      return filter.data;
+    } catch (error) {
+      logger.error('Error creating Gmail filter:', error);
+      throw error;
+    }
+  }
+
+  async getMessagesByLabel(labelId, maxResults = 100) {
+    try {
+      const response = await this.gmail.users.messages.list({
+        userId: 'me',
+        labelIds: [labelId],
+        maxResults: maxResults,
+      });
+
+      const messages = response.data.messages || [];
+      logger.debug(`Found ${messages.length} messages with label ${labelId}`);
+
+      return messages.map(msg => ({ id: msg.id, threadId: msg.threadId }));
+    } catch (error) {
+      logger.error(`Error fetching messages by label ${labelId}:`, error);
+      throw error;
+    }
+  }
+
   async getLabelId(labelName) {
     try {
       const labels = await this.gmail.users.labels.list({
@@ -311,6 +348,65 @@ class GmailService {
       return label ? label.id : null;
     } catch (error) {
       logger.error('Error getting labels:', error);
+      throw error;
+    }
+  }
+
+  async getOrCreateLabel(labelName) {
+    try {
+      // First try to get existing label
+      const existingLabelId = await this.getLabelId(labelName);
+      if (existingLabelId) {
+        logger.debug(`Label '${labelName}' already exists: ${existingLabelId}`);
+        return existingLabelId;
+      }
+
+      // Create new label if it doesn't exist
+      const response = await this.gmail.users.labels.create({
+        userId: 'me',
+        requestBody: {
+          name: labelName,
+          labelListVisibility: 'labelShow',
+          messageListVisibility: 'show',
+        },
+      });
+
+      logger.info(`Created new label '${labelName}': ${response.data.id}`);
+      return response.data.id;
+    } catch (error) {
+      logger.error(`Error getting or creating label '${labelName}':`, error);
+      throw error;
+    }
+  }
+
+  async applyLabel(messageId, labelId) {
+    try {
+      const result = await this.modifyMessageLabels(
+        messageId,
+        [labelId],
+        []
+      );
+
+      logger.debug(`Applied label ${labelId} to message ${messageId}`);
+      return result;
+    } catch (error) {
+      logger.error(`Error applying label ${labelId} to message ${messageId}:`, error);
+      throw error;
+    }
+  }
+
+  async removeLabel(messageId, labelId) {
+    try {
+      const result = await this.modifyMessageLabels(
+        messageId,
+        [],
+        [labelId]
+      );
+
+      logger.debug(`Removed label ${labelId} from message ${messageId}`);
+      return result;
+    } catch (error) {
+      logger.error(`Error removing label ${labelId} from message ${messageId}:`, error);
       throw error;
     }
   }

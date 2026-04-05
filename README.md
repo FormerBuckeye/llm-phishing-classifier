@@ -4,33 +4,51 @@ A production-ready email classification system that uses DeepSeek LLM to automat
 
 ## Current Implementation Status
 
-**⚠️ Hybrid Architecture (V1.5)**
+**✅ V2 Ready - Hybrid Architecture**
 
-This service currently operates with a **hybrid approach** that combines V1 and V2 features:
+This service supports **dual-mode operation** with both V1.5 and V2 features:
 
-- **Processing**: Time-based polling (V1 architecture)
-- **Detection**: DeepSeek LLM AI classification with Dual-Mode prompts (NEW)
-- **Delivery Logic**: Smart decision making with inbox restoration (V2 features)
-- **Speed**: Optimized 10-second polling interval (enhancement)
-- **Embeddings**: Optional OpenAI Dual-Mode Classification (NEW)
+- **Processing Mode**: Configurable (time-based or label-based)
+- `LABEL_MODE=false` (default): Time-based polling (V1 architecture)
+- `LABEL_MODE=true`: Label-based polling (V2 with zero inbox exposure)
+- **Detection**: DeepSeek LLM AI classification with Dual-Mode prompts (✅)
+- **Delivery Logic**: Smart decision making with inbox restoration (V2)
+- **Speed**: Optimized 10-second polling interval (✅)
+- **Embeddings**: Optional OpenAI Dual-Mode Classification (✅)
+- **Label Management**: Automated label application/removal (NEW in V2)
 
-### Hybrid Flow (Current)
+### Hybrid Flow
 
+**V1 Mode (Time-based Polling):**
 ```
 Email Arrives
-    ↓
+↓
 Gmail delivers to INBOX (native)
-    ↓
-Service polls every 10 seconds (time-based)
+↓
+Service polls every 10 seconds
 ↓
 Dual-Mode Classification (Static/Dynamic)
-    ↓
+↓
 DeepSeek classifies: phish/spam/benign
-    ↓
-Decision Based on Confidence Score:
-  - High-confidence threat (≥0.7) → Stay in SPAM ✓
-  - Low-confidence threat (<0.7) → INBOX + UNREAD for review ⚠
-  - Benign → INBOX + UNREAD ✓
+↓
+Decision: Move to SPAM or INBOX + UNREAD
+```
+
+**V2 Mode (Label-based Polling - Zero Exposure):**
+```
+Email Arrives
+↓
+Gmail Filter applies PENDING_CLASSIFICATION label
+↓
+Service polls label queue every 10 seconds
+↓
+Dual-Mode Classification (Static/Dynamic)
+↓
+DeepSeek classifies: phish/spam/benign
+↓
+Decision:
+- High confidence phish/spam → Keep in SPAM, remove PENDING label ✓
+- Benign → INBOX + UNREAD, remove PENDING label ✓
 ```
 
 ## Version History
@@ -48,33 +66,75 @@ Decision Based on Confidence Score:
 - No Gmail label management
 - Basic classification only
 
-### V2 (Planned - Enhanced)
+### V2 (Implemented)
+**Status:** ✅ Available - Label-based processing with zero inbox exposure
 **Goals:**
 - Gmail label-based processing with pending queue
 - Priority routing for different email types
 - Zero inbox exposure for confirmed threats
 - Two-layer security (Gmail filter + AI classification)
 
-**Planned Architecture:**
-```
-Inbound Email → Gmail Filter → Apply PENDING_CLASSIFICATION label
-                                    ↓
-                    Service polls label queue → DeepSeek Classification
-                                    ↓
-                            Decision:
-                            - High confidence phish → stays SPAM
-                            - Low confidence phish → INBOX + UNREAD
-                            - Benign → INBOX + UNREAD
+**Quick Start:**
+
+1. **Enable V2 mode in .env:**
+```bash
+# In .env file:
+LABEL_MODE=true
+PENDING_LABEL=PENDING_CLASSIFICATION
+# Optional: Fast polling for labeled queue
+POLL_INTERVAL_SECONDS=10
 ```
 
-**Status:** Code foundation in place, pending Gmail filter setup
+
+2. **Run setup script (one-time):**
+```bash
+node tools/setup-priority-routing.js
+```
+This creates the Gmail filter that applies PENDING_LABEL to all incoming emails.
+
+
+3. **Verify Gmail OAuth scopes include:**
+```bash
+GMAIL_SCOPES=https://www.googleapis.com/auth/gmail.modify,https://www.googleapis.com/auth/gmail.labels,https://www.googleapis.com/auth/gmail.settings.basic
+```
+Note: settings.basic scope is required for creating filters. If not available, manually create filter in Gmail Settings > Filters & Blocked Addresses.
+
+
+4. **Start service:**
+```bash
+npm start
+```
+
+**Verification:**
+- Check logs for "Starting V2 label-based polling"
+- Send test email and verify it gets the PENDING_CLASSIFICATION label
+- Verify classification happens and labels are cleaned up
+
+**Benefits:**
+- Zero inbox exposure: Emails never hit inbox before classification
+- Lower Gmail API usage: Only processes labeled emails
+- More reliable: Gmail filter runs server-side instantly on arrival
+- Better audit trail: PENDING_CLASSIFICATION label visible in Gmail UI
+
+**Architecture:**
+```
+Inbound Email → Gmail Filter → Apply PENDING_CLASSIFICATION label
+↓
+Service polls label queue → DeepSeek Classification
+↓
+Decision:
+- High confidence phish → stays SPAM
+- Low confidence phish → INBOX + UNREAD
+- Benign → INBOX + UNREAD
+```
+
+**Status:** ✅ Available - Label-based processing with zero inbox exposure
 
 ## Current Configuration
 
 **Runtime Settings (as configured):**
-- **Processing Mode**: Time-based polling
+- **Processing Mode**: Label-based polling (V2 mode)
 - **Poll Interval**: 10 seconds (configurable)
-- **Processing Window**: Last 1 hour
 - **Quarantine Threshold**: ≥0.7 confidence
 - **AI Model**: DeepSeek (via API)
 - **Database**: PostgreSQL
@@ -117,17 +177,17 @@ Key environment variables:
 The service now supports **dual-mode classification** that automatically switches between:
 
 1. **Dynamic Mode** (with OpenAI API key)
-   - Generates embeddings for each email using OpenAI's `text-embedding-ada-002`
-   - Finds 3 most similar examples from ground truth phishing dataset
-   - Creates dynamic few-shot prompts with similar examples
-   - Enhanced accuracy through similarity-based context
-   - Cost: ~$0.00005 per email
+- Generates embeddings for each email using OpenAI's `text-embedding-ada-002`
+- Finds 3 most similar examples from ground truth phishing dataset
+- Creates dynamic few-shot prompts with similar examples
+- Enhanced accuracy through similarity-based context
+- Cost: ~$0.00005 per email
 
 2. **Static Mode** (fallback, no API key required)
-   - Uses fixed few-shot examples in prompts
-   - No external API costs
-   - Still provides excellent classification accuracy
-   - Fully functional without configuration
+- Uses fixed few-shot examples in prompts
+- No external API costs
+- Still provides excellent classification accuracy
+- Fully functional without configuration
 
 **Configuration:**
 ```bash
@@ -162,7 +222,7 @@ Classification: benign
 Confidence: 0.9500
 Action: delivered to inbox ✓
 
-Email: "Security alert"  
+Email: "Security alert"
 Sender: no-reply@accounts.google.com
 Classification: benign
 Confidence: 0.9500
@@ -177,11 +237,12 @@ Action: quarantined to spam ✓
 
 ## Security Architecture
 
-### Two-Layer Security (Planned Implementation)
-1. **Gmail Layer** (fast, broad): Native spam filter catches suspicious emails immediately
-2. **AI Layer** (sophisticated): Service polls and classifies with DeepSeek for delivery decisions
+### Two-Layer Security (Implemented)
 
-Current implementation provides AI-enhanced protection with 10-second processing intervals.
+1. **Gmail Layer** (fast, broad): Gmail filter instantly applies PENDING_CLASSIFICATION label to all incoming emails
+2. **AI Layer** (sophisticated): Service polls label queue and classifies with DeepSeek for delivery decisions
+
+The system provides zero inbox exposure with dual-layer security protecting against threats before they reach the inbox.
 
 ## Database Schema
 
@@ -199,17 +260,14 @@ Current implementation provides AI-enhanced protection with 10-second processing
 
 ## Notes
 
-**For True Zero-Exposure (V2):** To implement full pending-label flow:
+**For True Zero-Exposure (V2):** Zero inbox exposure is now fully implemented:
 
-1. Create Gmail filter:
-   ```
-   Matches: *
-   Do this: Apply label "PENDING_CLASSIFICATION", Mark as read
-   ```
-
-2. Update code to use label-based queries instead of time-based
-
-3. Modify service to poll pending label queue
+✅ Gmail filter automatically applies PENDING_CLASSIFICATION label to all incoming emails
+✅ Service polls label queue and classifies with DeepSeek
+✅ After classification, PENDING label is removed and email is routed appropriately:
+   - Spam/Phish (≥0.7 confidence) → Remains in SPAM, pending label removed
+   - Benign → INBOX + UNREAD, pending label removed
+✅ Zero inbox exposure: Users never see emails before AI classification
 
 ## License
 
@@ -220,4 +278,4 @@ MIT
 **Version Tags:**
 - **v1.0** (commit 894926b) - Basic email classification
 - **v2.0** (commit 438e914) - Code foundation for pending-label flow
-- **Current** - Hybrid implementation with 10s optimized polling
+- **Current** - V2 label-based processing with zero inbox exposure

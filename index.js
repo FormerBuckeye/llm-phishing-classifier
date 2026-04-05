@@ -28,6 +28,8 @@ class EmailClassificationApp {
       // Start continuous polling
       await this.processor.startPolling({
         intervalSeconds: parseInt(process.env.POLL_INTERVAL_SECONDS || 60),
+        labelMode: process.env.LABEL_MODE === 'true',
+        labelName: process.env.PENDING_LABEL || 'PENDING_CLASSIFICATION',
         hoursToProcess: parseInt(process.env.HOURS_TO_PROCESS || 1),
         maxRuns: process.env.MAX_RUNS ? parseInt(process.env.MAX_RUNS) : null,
       });
