@@ -108,6 +108,41 @@ Key environment variables:
 - `moveToInbox(messageId)` - Restore to inbox
 - `markUnread(messageId)` - Mark unread for review
 
+### Dual-Mode Classification (NEW in v1.5)
+**OpenAI Embeddings Integration** (Optional Enhancement)
+
+The service now supports **dual-mode classification** that automatically switches between:
+
+1. **Dynamic Mode** (with OpenAI API key)
+   - Generates embeddings for each email using OpenAI's `text-embedding-ada-002`
+   - Finds 3 most similar examples from ground truth phishing dataset
+   - Creates dynamic few-shot prompts with similar examples
+   - Enhanced accuracy through similarity-based context
+   - Cost: ~$0.00005 per email
+
+2. **Static Mode** (fallback, no API key required)
+   - Uses fixed few-shot examples in prompts
+   - No external API costs
+   - Still provides excellent classification accuracy
+   - Fully functional without configuration
+
+**Configuration:**
+```bash
+# Add to .env for dynamic mode (optional)
+OPENAI_API_KEY=sk-...
+```
+
+**Services:**
+- `EmbeddingService` - Generates embeddings via OpenAI API
+- `PromptBuilder` - Builds dynamic or static prompts based on availability
+- `EmailProcessor` - Integrates similarity search before classification
+
+**Benefits:**
+- Zero-configuration fallback (works immediately)
+- Enhanced accuracy with embeddings (when configured)
+- Graceful degradation (never fails due to missing API key)
+- Cost-effective (~5 cents per 1000 emails)
+
 ## Testing & Verification
 
 ### Current Performance

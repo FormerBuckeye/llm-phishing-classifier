@@ -23,9 +23,10 @@
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.0",
     "axios": "^1.6.8",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "googleapis": "^134.0.0",
     "mailparser": "^3.9.6",
+    "openai": "^6.33.0",
     "pg": "^8.11.3",
     "winston": "^3.13.0"
   },

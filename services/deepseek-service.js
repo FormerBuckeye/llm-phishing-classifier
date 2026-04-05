@@ -1,11 +1,13 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
+const PromptBuilder = require('./classifier-prompt-builder');
 
 class DeepSeekService {
   constructor() {
     this.apiKey = process.env.DEEPSEEK_API_KEY;
     this.apiUrl = process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/v1';
     this.model = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+    this.promptBuilder = new PromptBuilder();
 
     if (!this.apiKey) {
       throw new Error('DEEPSEEK_API_KEY environment variable is required');
@@ -21,14 +23,9 @@ class DeepSeekService {
     });
   }
 
-  async classifyEmail(emailData) {
+  async classifyEmail(emailData, similarExamples = null) {
     try {
-      const prompt = this.buildClassificationPrompt(emailData);
-
-      logger.debug('Classifying email with DeepSeek...', {
-        subject: emailData.subject,
-        sender: emailData.senderEmail,
-      });
+      const prompt = this.promptBuilder.buildPrompt(emailData, similarExamples);
 
       const response = await this.client.post('/chat/completions', {
         model: this.model,

@@ -1,6 +1,7 @@
 const GmailService = require('./gmail-service');
 const DeepSeekService = require('./deepseek-service');
 const DatabaseService = require('../database/db-service');
+const EmbeddingService = require('./embedding-service');
 const logger = require('../utils/logger');
 
 class EmailProcessor {
@@ -8,7 +9,10 @@ class EmailProcessor {
     this.gmail = new GmailService();
     this.deepseek = new DeepSeekService();
     this.db = new DatabaseService();
+    this.embedding = new EmbeddingService();
     this.processingHistory = new Set(); // Track processed message IDs
+    // Cache for phishing ground truth (populated when embedding enabled)
+    this.phishingEmbeddings = null;
   }
 
   async init() {
@@ -19,11 +23,84 @@ class EmailProcessor {
       await this.gmail.init();
       await this.deepseek.testConnection();
 
+      // Load ground truth if embeddings enabled
+      if (this.embedding.isEnabled()) {
+        logger.info('✅ Embedding service enabled - loading ground truth phishing examples');
+        await this.loadGroundTruth();
+      } else {
+        logger.info('ℹ️  Using static few-shot fallback (no embeddings)');
+      }
+
       logger.info('✅ Email Processor initialized successfully');
     } catch (error) {
       logger.error('❌ Failed to initialize Email Processor:', error);
       throw error;
     }
+  }
+
+  /**
+   * Load and embed phishing examples for similarity search
+   * Called only when OpenAI is enabled
+   */
+  async loadGroundTruth() {
+    try {
+      // Load from GitHub or local file
+      const examples = await this.fetchPhishingExamples();
+      logger.info(`Loaded ${examples.length} phishing examples for similarity search`);
+
+      // Pre-calculate embeddings for ground truth
+      this.phishingEmbeddings = await Promise.all(
+        examples.map(async (example, index) => ({
+          id: `ground_truth_${index}`,
+          content: example.content, // Full email text
+          subject: example.subject,
+          classification: example.classification || 'phish',
+          embedding: await this.embedding.getEmbedding(example.content)
+        }))
+      );
+
+      logger.info('✅ Ground truth embeddings pre-calculated');
+    } catch (error) {
+      logger.warn('Could not load ground truth phishing examples:', error.message);
+      logger.warn('Will use static few-shot fallback');
+      this.phishingEmbeddings = null;
+    }
+  }
+
+  /**
+   * Fetch phishing examples from GitHub dataset
+   * For demo, you can also load from local json file
+   */
+  async fetchPhishingExamples() {
+    // For interview challenge, let's use a simple local dataset
+    // You could fetch from: https://github.com/rf-peixoto/phishing_pot
+    return [
+      {
+        subject: 'Verify Your Email Now',
+        content: 'We detected suspicious activity. Click here to verify your account within 24 hours or it will be suspended.',
+        classification: 'phish'
+      },
+      {
+        subject: 'Unlock Your Account',
+        content: 'Your bank account has been locked due to unusual login attempts. Verify your identity now:',
+        classification: 'phish'
+      },
+      {
+        subject: 'Alert: Security Breach',
+        content: 'Our security team detected unauthorized access. Click below to reset your password immediately:',
+        classification: 'phish'
+      },
+      {
+        subject: 'Weekly Newsletter',
+        content: 'Get the latest updates and news from our team. Click here to read more.',
+        classification: 'benign'
+      },
+      {
+        subject: 'Meeting Reminder',
+        content: 'Don\'t forget about our meeting at 3pm in conference room B.',
+        classification: 'benign'
+      }
+    ];
   }
 
   async processRecentEmails(hours = 1) {
@@ -120,7 +197,28 @@ class EmailProcessor {
       });
 
       // Classify the email
-      const classification = await this.deepseek.classifyEmail(emailData);
+      // Find similar examples using embeddings if enabled
+    let similarExamples = null;
+    if (this.embedding.isEnabled() && this.phishingEmbeddings) {
+      try {
+        const emailText = this.promptBuilder.extractEmbeddingText(emailData);
+        const emailEmbedding = await this.embedding.getEmbedding(emailText);
+        similarExamples = this.embedding.findNearestNeighbors(
+          emailEmbedding,
+          this.phishingEmbeddings,
+          3 // Find top 3 most similar examples
+        );
+        logger.debug('Found similar examples for embedding-based classification', {
+          count: similarExamples.length,
+          hasExamples: similarExamples.length > 0,
+        });
+      } catch (embeddingError) {
+        logger.warn('Embedding similarity search failed, using static fallback:', embeddingError.message);
+        similarExamples = null;
+      }
+    }
+
+    const classification = await this.deepseek.classifyEmail(emailData, similarExamples);
 
       // Determine action based on classification
       let actionTaken = 'none';

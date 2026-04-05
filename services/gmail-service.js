@@ -246,6 +246,61 @@ class GmailService {
     }
   }
 
+  async moveToInbox(messageId) {
+    try {
+      // Get label ID for INBOX and SPAM
+      const labels = await this.gmail.users.labels.list({
+        userId: 'me',
+      });
+
+      const inboxLabel = labels.data.labels.find(label => label.name === 'INBOX');
+      const spamLabel = labels.data.labels.find(label => label.name === 'SPAM');
+
+      if (!inboxLabel) {
+        throw new Error('INBOX label not found');
+      }
+
+      // Add INBOX label and remove SPAM label (if it exists)
+      const labelsToRemove = ['SPAM'];
+      if (spamLabel) {
+        labelsToRemove.push(spamLabel.id);
+      }
+
+      const result = await this.modifyMessageLabels(
+        messageId,
+        [inboxLabel.id],
+        labelsToRemove
+      );
+
+      logger.info(`Message ${messageId} moved to Inbox`);
+      return result;
+    } catch (error) {
+      logger.error(`Error moving message ${messageId} to inbox:`, error);
+      throw error;
+    }
+  }
+
+  async markUnread(messageId) {
+    try {
+      const unreadLabelId = await this.getLabelId('UNREAD');
+      if (!unreadLabelId) {
+        throw new Error('UNREAD label not found');
+      }
+
+      const result = await this.modifyMessageLabels(
+        messageId,
+        [unreadLabelId],
+        []
+      );
+
+      logger.info(`Message ${messageId} marked as unread`);
+      return result;
+    } catch (error) {
+      logger.error(`Error marking message ${messageId} as unread:`, error);
+      throw error;
+    }
+  }
+
   async getLabelId(labelName) {
     try {
       const labels = await this.gmail.users.labels.list({
