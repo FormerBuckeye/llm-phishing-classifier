@@ -9,9 +9,10 @@ A production-ready email classification system that uses DeepSeek LLM to automat
 This service currently operates with a **hybrid approach** that combines V1 and V2 features:
 
 - **Processing**: Time-based polling (V1 architecture)
-- **Detection**: DeepSeek LLM AI classification (V2 quality)
+- **Detection**: DeepSeek LLM AI classification with Dual-Mode prompts (NEW)
 - **Delivery Logic**: Smart decision making with inbox restoration (V2 features)
 - **Speed**: Optimized 10-second polling interval (enhancement)
+- **Embeddings**: Optional OpenAI Dual-Mode Classification (NEW)
 
 ### Hybrid Flow (Current)
 
@@ -21,6 +22,8 @@ Email Arrives
 Gmail delivers to INBOX (native)
     ↓
 Service polls every 10 seconds (time-based)
+↓
+Dual-Mode Classification (Static/Dynamic)
     ↓
 DeepSeek classifies: phish/spam/benign
     ↓
