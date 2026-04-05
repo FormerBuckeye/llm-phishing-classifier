@@ -49,4 +49,15 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
+// Method to add database transport after database service is initialized
+logger.addDatabaseTransport = function(dbService) {
+  try {
+    const PostgresTransport = require('./winston-pg-transport');
+    logger.add(new PostgresTransport({ dbService }));
+    logger.info('✅ Database logging transport added');
+  } catch (error) {
+    logger.warn('❌ Failed to add database transport:', error.message);
+  }
+};
+
 module.exports = logger;

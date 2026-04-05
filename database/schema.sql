@@ -70,3 +70,15 @@ CREATE TABLE IF NOT EXISTS email_metadata_cache (
 );
 
 CREATE INDEX IF NOT EXISTS idx_email_metadata_gmail_id ON email_metadata_cache(gmail_id);
+
+-- System logs for winston logger persistence
+CREATE TABLE IF NOT EXISTS system_logs (
+  id SERIAL PRIMARY KEY,
+  level VARCHAR(20) NOT NULL,
+  message TEXT NOT NULL,
+  meta JSONB,
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_system_logs_timestamp ON system_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_system_logs_level ON system_logs(level);

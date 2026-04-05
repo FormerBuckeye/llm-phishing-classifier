@@ -265,6 +265,27 @@ class DatabaseService {
       logger.info('Disconnected from database');
     }
   }
+
+  // Save system logs for debugging and audit trail
+  async saveSystemLog(level, message, meta = null) {
+    try {
+      const query = `
+        INSERT INTO system_logs (level, message, meta, timestamp)
+        VALUES ($1, $2, $3, NOW())
+      `;
+
+      const values = [
+        level,
+        message.substring(0, 4000), // Truncate long messages
+        meta ? JSON.stringify(meta).substring(0, 10000) : null // Truncate long meta
+      ];
+
+      await this.pool.query(query, values);
+    } catch (error) {
+      // Log to console if database logging fails
+      console.error('Database logging failed:', error.message);
+    }
+  }
 }
 
 module.exports = DatabaseService;
